@@ -1,142 +1,20 @@
 import typer
-from typing import Annotated
-from pathlib import Path
-import shutil
-import json
-from rich import print
+from app.utils.handle_config_file import get_selected_db_path
+from app.constant import APP_NAME
+from app.db.engin import db_session
 from rich.table import Table
-from rich.prompt import Prompt
-
-from db.init import db_init
-from db.engin import db_session
+from rich import print
 import sqlite3
 
-app = typer.Typer()
-HOME_DIR = str(Path.home())
-APP_NAME = "miniorm"
-CONFIG_DIR = Path.home() / ".miniorm"
-CONFIG_FILE = CONFIG_DIR / "config.json"
+doc_app = typer.Typer()
 
 
-def load_config() -> dict[str, list[str]]:
-    if not CONFIG_FILE.exists():
-        return {"databases": []}
-    try:
-        with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        return {"databases": []}
-
-
-def save_config(config: dict[str, list[str]]):
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(config, f, indent=4)
-
-
-def _get_selected_db_path(allow_destroy: bool = False):
-    config = load_config()
-    databases = config.get("databases", [])
-
-    if not databases:
-        print("[red]No databases found. Run 'init' first.[/red]")
-        raise typer.Exit(1)
-
-    if len(databases) == 1:
-        return Path(databases[0])
-
-    print("[cyan]Multiple databases found. Please select one:[/cyan]")
-    for idx, path in enumerate(databases):
-        print(f"{idx + 1}. {path}")
-
-    choice = Prompt.ask(
-        "Enter the number of the database",
-        choices=[str(i + 1) for i in range(len(databases))],
-    )
-    return Path(databases[int(choice) - 1])
-
-
-@app.command(name="init")
-def init(
-    path: Annotated[
-        str, typer.Argument(help="Path for the sqlite initialization")
-    ] = HOME_DIR,
-):
-    """
-    This command will initialize an temporary sqlite file. It will also create the tables along with filling it with temporary custom data.
-    """
-    target_path = Path(path).resolve()
-    app_dir = target_path / f".{APP_NAME}"
-    app_dir.mkdir(parents=True, exist_ok=True)
-    db_path = app_dir / "db.sqlite3"
-
-    # Initialize DB
-    db_init(path=db_path)
-
-    # Update Config
-    config = load_config()
-    str_path = str(target_path)
-    if str_path not in config["databases"]:
-        config["databases"].append(str_path)
-        save_config(config)
-
-    print("✔ Database initialized")
-    print(f"✔ Location: {db_path}")
-
-
-@app.command(name="destroy")
-def destroy():
-    """
-    This command will destroy the preset sqlite file and remove it along with the data
-    """
-    try:
-        project_path = _get_selected_db_path()
-    except typer.Exit:
-        return
-
-    app_dir = project_path / f".{APP_NAME}"
-
-    if not app_dir.exists():
-        print("No path directory found on disk")
-        # We might still want to remove it from config if it doesn't exist
-    else:
-        shutil.rmtree(app_dir)
-        print("✔ Database removed successfully")
-
-    # Remove from config
-    config = load_config()
-    str_path = str(project_path)
-    if str_path in config["databases"]:
-        config["databases"].remove(str_path)
-        save_config(config)
-
-
-@app.command(name="refresh")
-def refresh():
-    """
-    This command will reseed your sqlite database with data
-    """
-    project_path = _get_selected_db_path()
-    app_dir = project_path / f".{APP_NAME}"
-    db_path = app_dir / "db.sqlite3"
-
-    if not app_dir.exists():
-        print("No path directory found")
-        raise typer.Exit(1)
-
-    if db_path.exists():
-        db_path.unlink()
-
-    db_init(path=db_path)
-    print("Successfully refeshed the db")
-
-
-@app.command(name="db-docs")
+@doc_app.command(name="docs")
 def db_docs():
     """
     This command is for getting tables and table structure and example data
     """
-    project_path = _get_selected_db_path()
+    project_path = get_selected_db_path()
     db_path = project_path / f".{APP_NAME}" / "db.sqlite3"
 
     if not db_path.exists():
@@ -214,7 +92,3 @@ def db_docs():
                 print(
                     f"[bold red]Error fetching example data for {table_name}:[/bold red] {e}"
                 )
-
-
-if __name__ == "__main__":
-    app()

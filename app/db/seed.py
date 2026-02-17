@@ -1,5 +1,5 @@
 from pathlib import Path
-from db.engin import db_session
+from app.db.engin import db_session
 
 
 def seed_db(db_path: Path, seed_path: Path, schema_path: Path):

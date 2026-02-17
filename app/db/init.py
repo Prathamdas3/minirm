@@ -1,4 +1,4 @@
-from db.seed import seed_db
+from app.db.seed import seed_db
 from pathlib import Path
 
 
