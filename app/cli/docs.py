@@ -2,15 +2,26 @@ import typer
 from app.utils.handle_config_file import get_selected_db_path
 from app.constant import APP_NAME
 from app.db.engin import db_session
-from rich.table import Table
+from app.utils.table import cli_table_handler
 from rich import print
 import sqlite3
+from typing import Optional
 
 doc_app = typer.Typer()
 
 
 @doc_app.command(name="docs")
-def db_docs():
+def docs(
+    table_name: Optional[str] = typer.Argument(
+        None, help="The name of the table to visualize"
+    ),
+    all_tables: bool = typer.Option(
+        False, "--all", "-a", help="Show all tables and the relations"
+    ),
+    relation: bool = typer.Option(
+        False, "--relation", "-r", help="Show only the relations"
+    ),
+):
     """
     This command is for getting tables and table structure and example data
     """
@@ -25,70 +36,125 @@ def db_docs():
         cursor = conn.cursor()
 
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = cursor.fetchall()
+        tables_data = cursor.fetchall()
+        tables = [t[0] for t in tables_data if t[0] != "sqlite_sequence"]
 
-        for table_name_tuple in tables:
-            table_name = table_name_tuple[0]
-            if table_name == "sqlite_sequence":  # Skip internal SQLite table
-                continue
+        if not tables:
+            print("[yellow]No tables found in the database.[/yellow]")
+            return
 
-            print(f"[bold green]\nTable: {table_name}[/bold green]")
+        # Case: Show only relations
+        if relation:
+            relations_list = []
+            target_tables = [table_name] if table_name else tables
+
+            # If table_name provided, check if it exists
+            if table_name and table_name not in tables:
+                print(f"[bold red]Error:[/] Table '{table_name}' not found.")
+                return
+
+            for t_name in target_tables:
+                cursor.execute(f"PRAGMA foreign_key_list({t_name});")
+                fks = cursor.fetchall()
+                # fk structure: (id, seq, table, from, to, on_update, on_delete, match)
+                # Relationship: ReferencedTable -> CurrentTable (One-to-Many usually)
+                for fk in fks:
+                    referenced_table = fk[2]
+                    # Attempt to describe the relationship
+                    # Parent (referenced) -> Child (current)
+                    relations_list.append(
+                        [f"{referenced_table} -> {t_name} (One-to-Many)"]
+                    )
+
+            if relations_list:
+                cli_table_handler(
+                    title="Database Relationships",
+                    headers=["Relationship"],
+                    rows=relations_list,
+                )
+            else:
+                print("[yellow]No relationships found for selected table(s).[/yellow]")
+            return
+
+        # Case: List available tables (Default if no args)
+        if not table_name and not all_tables:
+            cli_table_handler(
+                title="Available Tables",
+                headers=["Table Name"],
+                rows=[[t] for t in tables],
+            )
+            return
+
+        # Case: Show details (All or Specific Table)
+        target_tables_list = []
+        if all_tables:
+            target_tables_list = tables
+        elif table_name:
+            if table_name not in tables:
+                print(f"[bold red]Error:[/] Table '{table_name}' not found.")
+                return
+            target_tables_list = [table_name]
+
+        for t_name in target_tables_list:
+            print(f"\n[bold green]Table: {t_name}[/bold green]")
 
             # Display Schema
-            schema_table = Table(title=f"Schema for {table_name}")
-            schema_table.add_column("Column", style="cyan", no_wrap=True)
-            schema_table.add_column("Type", style="magenta")
-            schema_table.add_column("Nullable", style="blue")
-            schema_table.add_column("Primary Key", style="green")
-
-            cursor.execute(f"PRAGMA table_info({table_name});")
-            for col in cursor.fetchall():
-                schema_table.add_row(
-                    col[1],  # name
-                    col[2],  # type
-                    "YES" if not col[3] else "NO",  # notnull
-                    "YES" if col[5] else "NO",  # pk
-                )
-            print(schema_table)
+            cli_table_handler(
+                title=f"Schema for {t_name}",
+                headers=["Column", "Type", "Nullable", "Primary Key"],
+                rows=[
+                    [
+                        col[1],  # name
+                        col[2],  # type
+                        "YES" if not col[3] else "NO",  # notnull
+                        "YES" if col[5] else "NO",  # pk
+                    ]
+                    for col in cursor.execute(
+                        f"PRAGMA table_info({t_name});"
+                    ).fetchall()
+                ],
+            )
 
             # Display Relationships (Foreign Keys)
-            foreign_key_table = Table(title=f"Relationships for {table_name}")
-            foreign_key_table.add_column("Column", style="cyan", no_wrap=True)
-            foreign_key_table.add_column("References Table", style="magenta")
-            foreign_key_table.add_column("References Column", style="blue")
-            foreign_key_table.add_column("On Delete", style="green")
-
-            cursor.execute(f"PRAGMA foreign_key_list({table_name});")
+            cursor.execute(f"PRAGMA foreign_key_list({t_name});")
             fks = cursor.fetchall()
             if fks:
-                for fk in fks:
-                    foreign_key_table.add_row(
-                        fk[3],  # from (column in current table)
-                        fk[2],  # table (referenced table)
-                        fk[4],  # to (column in referenced table)
-                        fk[5],  # on_delete
-                    )
-                print(foreign_key_table)
+                cli_table_handler(
+                    title=f"Relationships for {t_name}",
+                    headers=[
+                        "Column",
+                        "References Table",
+                        "References Column",
+                        "On Delete",
+                    ],
+                    rows=[
+                        [
+                            fk[3],  # from
+                            fk[2],  # table
+                            fk[4],  # to
+                            fk[5],  # on_delete
+                        ]
+                        for fk in fks
+                    ],
+                )
             else:
                 print(
-                    f"[yellow]No foreign key relationships found for {table_name}.[/yellow]"
+                    f"[yellow]No foreign key relationships found for {t_name}.[/yellow]"
                 )
 
             # Display Example Data
-            example_data_table = Table(title=f"Example Data for {table_name}")
             try:
-                cursor.execute(f"SELECT * FROM {table_name} LIMIT 3;")
+                cursor.execute(f"SELECT * FROM {t_name} LIMIT 3;")
                 rows = cursor.fetchall()
                 if rows:
-                    # Add columns based on cursor description
-                    for description in cursor.description:
-                        example_data_table.add_column(description[0], style="bold cyan")
-                    for row in rows:
-                        example_data_table.add_row(*[str(item) for item in row])
-                    print(example_data_table)
+                    cli_table_handler(
+                        title=f"Example Data for {t_name}",
+                        headers=[description[0] for description in cursor.description],
+                        rows=rows,
+                    )
                 else:
-                    print(f"[yellow]No example data found for {table_name}.[/yellow]")
+                    print(f"[yellow]No example data found for {t_name}.[/yellow]")
             except sqlite3.OperationalError as e:
                 print(
-                    f"[bold red]Error fetching example data for {table_name}:[/bold red] {e}"
+                    f"[bold red]Error fetching example data for {t_name}:[/bold red] {e}"
                 )

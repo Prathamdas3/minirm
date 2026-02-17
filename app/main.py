@@ -10,7 +10,7 @@ def main(
     ui: bool = typer.Option(False, "--ui", help="Launch the UI"),
 ):
     if ui:
-        from app.tui.ui import SQLApp
+        from app.ui.ui import SQLApp
 
         app_ui = SQLApp()
         app_ui.run()

@@ -12,6 +12,8 @@ from textual.widgets import (
     DataTable,
     RichLog,
     Markdown,
+    TabbedContent,
+    TabPane,
 )
 from textual.binding import Binding
 
@@ -26,8 +28,8 @@ class Question(ListItem):
 
 
 class SchemaDisplay(Collapsible):
-    def __init__(self, table_name: str) -> None:
-        super().__init__(title=f"Schema: {table_name}")
+    def __init__(self, table_name: str, row_count: int = 0) -> None:
+        super().__init__(title=f"Schema: {table_name} ({row_count} rows)")
         self.table_name = table_name
 
     def compose(self) -> ComposeResult:
@@ -97,7 +99,7 @@ class SQLApp(App):
         color: $text;
         padding: 1;
         margin-bottom: 1;
-        border: wide $primary;
+        border: heavy $primary;
     }
 
     .problem-desc {
@@ -133,10 +135,14 @@ class SQLApp(App):
 
     #console-log {
         height: 1fr;
-        min-height: 10;
         border: solid $success;
         background: $surface-darken-1;
         overflow-y: auto;
+    }
+
+    #sample-data-table {
+        height: 1fr;
+        border: solid $success;
     }
 
     .button-row {
@@ -204,8 +210,8 @@ Write a query to select all users from the `users` table.
             )
 
             yield Label("Database Schemas", classes="section-title")
-            yield SchemaDisplay("users")
-            yield SchemaDisplay("posts")
+            yield SchemaDisplay("users", row_count=150)
+            yield SchemaDisplay("posts", row_count=5000)
 
         # Right Panel: SQL Editor, Console
         with Vertical(id="right-panel"):
@@ -216,8 +222,14 @@ Write a query to select all users from the `users` table.
                 yield Button("Run Query", id="btn-run")
                 yield Button("Show Hints", id="btn-hints")
 
-            yield Label("Query Response Console", classes="section-title")
-            yield RichLog(id="console-log", markup=True)
+            yield Label("Query Response / Data", classes="section-title")
+
+            with TabbedContent(initial="console-tab"):
+                with TabPane("Console", id="console-tab"):
+                    yield RichLog(id="console-log", markup=True)
+
+                with TabPane("Sample Data", id="sample-data-tab"):
+                    yield DataTable(id="sample-data-table")
 
         yield Footer()
 
@@ -236,10 +248,23 @@ Write a query to select all users from the `users` table.
             log.write("[bold yellow]Hint:[/] Try using the SELECT statement.")
 
         elif "sample" in str(event.button.id):
+            # Extract table name from button id
+            table_name = str(event.button.id).replace("btn_sample_", "")
+
+            # Switch to Sample Data tab
+            self.query_one(TabbedContent).active = "sample-data-tab"
+
+            # Populate table (mock)
+            table = self.query_one("#sample-data-table", DataTable)
+            table.clear(columns=True)
+            if table_name == "users":
+                table.add_columns("ID", "Name", "Email")
+                table.add_rows(
+                    [(1, "Alice", "alice@example.com"), (2, "Bob", "bob@example.com")]
+                )
+            elif table_name == "posts":
+                table.add_columns("ID", "Title", "Content")
+                table.add_rows([(1, "Post 1", "Content 1"), (2, "Post 2", "Content 2")])
+
             log = self.query_one("#console-log", RichLog)
-            log.write("[bold magenta]Showing sample data for table...[/]")
-
-
-if __name__ == "__main__":
-    app = SQLApp()
-    app.run()
+            log.write(f"[bold magenta]Showing sample data for {table_name}...[/]")
