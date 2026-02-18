@@ -45,7 +45,7 @@ def docs(
 
         # Case: Show only relations
         if relation:
-            relations_list = []
+            relations_list:list[list[str]] = []
             target_tables = [table_name] if table_name else tables
 
             # If table_name provided, check if it exists

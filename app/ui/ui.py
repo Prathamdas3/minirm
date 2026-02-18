@@ -1,9 +1,8 @@
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Container, VerticalScroll, Horizontal
+from app.ui.styles import CSS
 from textual.widgets import (
     Button,
-    Footer,
-    Header,
     Label,
     TextArea,
     Collapsible,
@@ -14,8 +13,11 @@ from textual.widgets import (
     Markdown,
     TabbedContent,
     TabPane,
+    Header,
+    Footer,
 )
 from textual.binding import Binding
+from typing import Any
 
 
 class Question(ListItem):
@@ -29,12 +31,16 @@ class Question(ListItem):
 
 class SchemaDisplay(Collapsible):
     def __init__(self, table_name: str, row_count: int = 0) -> None:
-        super().__init__(title=f"Schema: {table_name} ({row_count} rows)")
+        super().__init__(
+            title=f"Schema: {table_name} ({row_count} rows)",
+            classes="collapsible",
+            collapsed=True,
+        )
         self.table_name = table_name
 
     def compose(self) -> ComposeResult:
         # Placeholder for schema table
-        dt = DataTable()
+        dt: DataTable[Any] = DataTable()
         dt.add_columns("Column", "Type", "Nullable")
         dt.add_rows(
             [
@@ -49,181 +55,81 @@ class SchemaDisplay(Collapsible):
         )
 
 
+QUESTIONS:dict[str,dict[str,Any]] = {
+    "Easy": {
+        "questions": ["Select All Users", "Find User by Id", "Count Users"],
+        "options": {"collapsed": False},
+    },
+    "Medium": {
+        "questions": ["Select All Users", "Find User by Id", "Count Users"],
+        "options": {"collapsed": True},
+    },
+}
+
+
 class SQLApp(App):
-    CSS = """
-    Screen {
-        layout: grid;
-        grid-size: 3;
-        grid-columns: 20% 40% 40%;
-        background: $surface;
-    }
-
-    /* Left Sidebar - Questions */
-    #sidebar {
-        dock: left;
-        width: 100%;
-        height: 100%;
-        border-right: solid $primary;
-        background: $surface-darken-1;
-        padding: 1;
-    }
-
-    .sidebar-title {
-        text-align: center;
-        text-style: bold;
-        background: $primary;
-        color: $text;
-        padding: 1;
-        margin-bottom: 1;
-    }
-
-    #sidebar ListView {
-        height: auto;
-        margin-bottom: 1; 
-        border: solid $secondary;
-        background: $surface;
-    }
-
-    /* Center Panel - Context */
-    #center-panel {
-        height: 100%;
-        padding: 1 2;
-        border-right: solid $primary;
-        overflow-y: auto;
-    }
-
-    .topic-title {
-        text-align: center;
-        text-style: bold;
-        background: $secondary;
-        color: $text;
-        padding: 1;
-        margin-bottom: 1;
-        border: heavy $primary;
-    }
-
-    .problem-desc {
-        background: $surface-lighten-1;
-        padding: 1;
-        margin-bottom: 2;
-        border: solid $accent;
-        height: auto;
-        min-height: 10;
-    }
-
-    .section-title {
-        text-style: bold;
-        color: $accent;
-        margin-top: 1;
-        margin-bottom: 1;
-    }
-
-    /* Right Panel - Execution */
-    #right-panel {
-        height: 100%;
-        padding: 1 2;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #sql-editor {
-        height: 1fr;
-        min-height: 10;
-        border: solid $accent;
-        margin-bottom: 1;
-    }
-
-    #console-log {
-        height: 1fr;
-        border: solid $success;
-        background: $surface-darken-1;
-        overflow-y: auto;
-    }
-
-    #sample-data-table {
-        height: 1fr;
-        border: solid $success;
-    }
-
-    .button-row {
-        height: auto;
-        margin-bottom: 1;
-        align: center middle;
-    }
-
-    #btn-run {
-        width: 45%;
-        background: $success;
-        color: $text;
-        margin-right: 2;
-    }
-
-    #btn-hints {
-        width: 45%;
-        background: $warning;
-        color: $surface;
-    }
-    
-    .sample-btn {
-        margin-top: 1;
-        width: 100%;
-    }
-    """
-
+    CSS = CSS
+    TITLE = "minirm"
     BINDINGS = [
         Binding("q", "quit", "Quit"),
     ]
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(show_clock=False)
 
-        # Left Sidebar: Questions
-        with Vertical(id="sidebar"):
-            yield Label("Questions List", classes="sidebar-title")
+        c_sidebar = Container(id="sidebar", classes="card")
+        c_sidebar.border_title = "Questions"
+        with c_sidebar:
             with VerticalScroll():
-                with Collapsible(title="Easy", collapsed=False):
-                    yield ListView(
-                        Question("Select All Users"),
-                        Question("Find User by ID"),
-                        Question("Count Users"),
-                    )
-                with Collapsible(title="Medium", collapsed=True):
-                    yield ListView(
-                        Question("Join Tables"),
-                        Question("Group By"),
-                    )
+                for key, data in QUESTIONS.items():
+                    questions_list = data.get("questions", [])
+                    collapsed = data.get("options", {}).get("collapsed", True)
+                    with Collapsible(
+                        title=str(key),
+                        collapsed=collapsed,
+                        classes="collapsible",
+                        id=f"collapsible_{key.lower()}",
+                    ):
+                        yield ListView(*[Question(title=q) for q in questions_list])
 
-        # Center Panel: Problem, Topic, Schemas
-        with Vertical(id="center-panel"):
-            yield Label("Topic: Select Data", classes="topic-title")
-
+        # 2. Topic Area (Middle Top)
+        c_topic = Container(id="topic-area", classes="card")
+        c_topic.border_title = "Topic: Select Data"
+        with c_topic:
             yield Markdown(
-                """# Problem Description
+                """**Problem Description**
+                
 Write a query to select all users from the `users` table.
 
-### Expected Output
-- **id** (Integer)
-- **name** (String)
-- **email** (String)
-                """,
-                classes="problem-desc",
+Expected: `id`, `name`, `email`
+                """
             )
+            with Collapsible(title="Show Hints", collapsed=True):
+                yield Label("Hint: Try using the SELECT statement.")
 
-            yield Label("Database Schemas", classes="section-title")
-            yield SchemaDisplay("users", row_count=150)
-            yield SchemaDisplay("posts", row_count=5000)
+        # 3. SQL Area (Right Top)
+        c_sql=TextArea(classes="card", language="sql",text="SELECT * FROM users;")
+        c_sql.border_title="SQL Query"
+        yield c_sql
+        # c_sql = Container(id="sql-area", classes="card")
+        # c_sql.border_title = "SQL Query"
+        # with c_sql:
+        #     # with Horizontal(classes="sql-toolbar"):
+        #     #     yield Button("Run Query", id="btn-run")
+        #     yield TextArea(language="sql", id="sql-editor", text="SELECT * FROM users;")
 
-        # Right Panel: SQL Editor, Console
-        with Vertical(id="right-panel"):
-            yield Label("SQL Query", classes="section-title")
-            yield TextArea(language="sql", id="sql-editor", text="SELECT * FROM users;")
+        # 4. Schemas Area (Middle Bottom) Need to fix the schema section 
+        # c_schemas = Container(id="schemas-area", classes="card")
+        # c_schemas.border_title = "Database Schemas"
+        # with c_schemas:
+        #     with VerticalScroll():
+        #         yield SchemaDisplay("users", row_count=150)
+        #         yield SchemaDisplay("posts", row_count=5000)
 
-            with Horizontal(classes="button-row"):
-                yield Button("Run Query", id="btn-run")
-                yield Button("Show Hints", id="btn-hints")
-
-            yield Label("Query Response / Data", classes="section-title")
-
+        # 5. Console Area (Right Bottom)
+        c_console = Container(id="console-area", classes="card")
+        c_console.border_title = "Results"
+        with c_console:
             with TabbedContent(initial="console-tab"):
                 with TabPane("Console", id="console-tab"):
                     yield RichLog(id="console-log", markup=True)
@@ -231,7 +137,15 @@ Write a query to select all users from the `users` table.
                 with TabPane("Sample Data", id="sample-data-tab"):
                     yield DataTable(id="sample-data-table")
 
+
         yield Footer()
+
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
+        question = event.item
+        if isinstance(question, Question):
+            self.query_one(
+                "#topic-area", Container
+            ).border_title = f"Topic: {question.title}"
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-run":
@@ -242,10 +156,6 @@ Write a query to select all users from the `users` table.
             log.write(
                 "[bold cyan]Result:[/]\n(1, 'Alice', 'alice@example.com')\n(2, 'Bob', 'bob@example.com')"
             )
-
-        elif event.button.id == "btn-hints":
-            log = self.query_one("#console-log", RichLog)
-            log.write("[bold yellow]Hint:[/] Try using the SELECT statement.")
 
         elif "sample" in str(event.button.id):
             # Extract table name from button id
