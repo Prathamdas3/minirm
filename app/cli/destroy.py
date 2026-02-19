@@ -76,7 +76,6 @@ def destroy(
 
     choice = Prompt.ask(
         "Enter the numbers of the databases to destroy (separated by space, e.g., '1 3')",
-        default="",
     )
 
     if not choice.strip():

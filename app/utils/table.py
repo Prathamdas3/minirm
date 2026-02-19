@@ -29,7 +29,7 @@ def cli_table_handler(
 
 
 def ui_table_handler(
-    table: DataTable, headers: List[str], rows: List[List[Any]]
+    table: DataTable[Any], headers: List[str], rows: List[List[Any]]
 ) -> None:
     """
     Renders a table in the TUI using textual.
