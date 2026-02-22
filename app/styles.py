@@ -285,24 +285,14 @@ CSS = """
         padding-top: 1;
     }
     
-    #sidebar_buttons_container{
-        layout:horizontal;
-        height:10%;
-    }
-    
-    .sidebar_btn{
-        border:solid $primary;
-        background: $surface-darken-1;
-        width:50%;
-        margin:1
-    }
-    
-    #db_list{
-        overflow-y:auto;
-        height:20%;
-    }
+#btn-refresh{
+    width: 100%;
+    background: $warning;
+    color: $text;
+}
+
     #questions{
         overflow-y:auto;
-        height:72%
+        height:95%
     }
     """
