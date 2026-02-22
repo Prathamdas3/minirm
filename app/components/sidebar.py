@@ -55,9 +55,13 @@ class Sidebar(Container):
                         classes="collapsible",
                         id=f"collapsible_{key.lower()}",
                     ):
-                        yield ListView(*[Question(title=q) for q in questions_list])
+
+                        with ListView():
+                            for q in questions_list:
+                                yield ListItem(Label(q))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press events to refresh the database."""
         if event.button.id == "btn-refresh":
             create_or_refresh_db()
+            self.notify("Database refreshed successfully!",timeout=1)

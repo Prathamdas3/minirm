@@ -32,6 +32,7 @@ CSS = """
     .collapsible {
         border: none;
         background: $surface-darken-1;
+        
     }
 
     .collapsible > CollapsibleTitle {
@@ -195,11 +196,10 @@ CSS = """
         background: $surface-darken-1;
     }
     
-    .sample-btn {
-        margin-top: 1;
-        width: auto;
-        min-width: 16;
-        height: 1;
+    .sample_btn {
+        background: $primary;
+        color: $text;
+        border: none;
     }
 
     .sample-btn-container {
@@ -207,6 +207,7 @@ CSS = """
         height: auto;
         width: 100%;
         padding-top: 1;
+        padding-right: 1;
     }
     
     #btn-refresh {
@@ -219,4 +220,12 @@ CSS = """
         overflow-y:auto;
         height:95%
     }
+   
+   .schema-table{
+        height: auto;
+        background: $surface-darken-1;
+        border:none;
+        width:90%
+
+   }
     """

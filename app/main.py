@@ -4,7 +4,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Footer, ListView
 from app.db import create_or_refresh_db
-from app.panels import (
+from app.components import (
     Sidebar,
     TopicPanel,
     SqlEditorPanel,
