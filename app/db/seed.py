@@ -1,8 +1,17 @@
+"""Database seeding functionality."""
+
 from pathlib import Path
 from app.db.engin import db_session
 
 
-def seed_db(db_path: Path, seed_path: Path, schema_path: Path):
+def seed_db(db_path: Path, seed_path: Path, schema_path: Path) -> None:
+    """Seed the database with schema and initial data.
+
+    Args:
+        db_path: Path to the SQLite database file.
+        seed_path: Path to the SQL file containing seed data.
+        schema_path: Path to the SQL file containing schema definitions.
+    """
     with db_session(path=db_path) as conn:
         cursor = conn.cursor()
 

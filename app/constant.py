@@ -1,10 +1,11 @@
+"""Constants and configuration for the minirm application."""
+
 from pathlib import Path
 from typing import Dict, List
 
 HOME_DIR = str(Path.home())
 APP_NAME = "minirm"
 CONFIG_DIR = Path.home() / ".minirm"
-CONFIG_FILE = CONFIG_DIR / "config.json"
 
 SCHEMAS: Dict[str, List[Dict[str, str]]] = {
     "users": [

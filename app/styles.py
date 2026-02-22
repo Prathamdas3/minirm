@@ -113,13 +113,6 @@ CSS = """
         color: $text-muted;
     }
     
-    #btn-hints {
-        width: 100%;
-        margin-top: 1;
-        background: $warning;
-        color: $surface;
-    }
-
     /* 
        Grid Area: SQL Editor 
        Column: 3, Row: 1 
@@ -129,12 +122,6 @@ CSS = """
         row-span: 1;
         padding:0;
         layers: base overlay;
-    }
-
-    .sql-toolbar {
-        height: auto;
-        align: right middle;
-        margin-bottom: 1;
     }
 
     #btn-run {
@@ -173,6 +160,16 @@ CSS = """
         scrollbar-visibility: hidden;
     }
 
+    .schema-inner {
+        height: auto;
+        background: $surface-darken-1;
+    }
+
+    .schema-inner DataTable {
+        height: auto;
+        background: $surface-darken-1;
+    }
+
     /* 
        Grid Area: Console 
        Column: 3, Row: 2 
@@ -182,13 +179,17 @@ CSS = """
         row-span: 1;
     }
 
-    #console-log {
-        height: 1fr;
+    #console-log{
         background: $surface-darken-1;
-        border: blank;
+        height:12%;
+        border:none;
+        scrollbar-visibility: hidden;
     }
-
-    #sample-data-table {
+    .dt_table{
+        background: $surface-darken-1;
+        border:none;
+    }
+    #sample-table {
         height: 1fr;
         border: blank;
         background: $surface-darken-1;
@@ -201,83 +202,6 @@ CSS = """
         height: 1;
     }
 
-    /* DB Management */
-    #db-list {
-        height: auto;
-        max-height: 50%;
-        margin-bottom: 1;
-        background: $surface-darken-1;
-    }
-    
-    .db-item-row {
-        height: auto;
-        width: 100%;
-        align-vertical: middle;
-        layout: horizontal;
-    }
-
-    .db-path-label {
-        width: 1fr;
-    }
-
-    .remove-db-btn {
-        width: 4;
-        min-width: 4;
-        height: 1;
-        background: $error;
-        color: $text;
-        margin-left: 1;
-        padding: 0;
-        border: none;
-    }
-
-    
-    /* Input Screen */
-    DBInputScreen {
-        align: center middle;
-        background: $surface 50%;
-    }
-
-    #dialog {
-        grid-size: 2;
-        grid-gutter: 1 2;
-        grid-rows: 1fr 3;
-        padding: 1 2;
-        width: 60;
-        height: 14;
-        border: thick $background 80%;
-        background: $surface;
-    }
-
-    #dialog-title {
-        column-span: 2;
-        height: 1;
-        width: 100%;
-        content-align: center middle;
-        text-style: bold;
-    }
-
-    #path-input {
-        column-span: 2;
-        width: 100%;
-    }
-
-    #btn-submit-db {
-        column-span: 2;
-        width: 100%;
-        margin-top: 1;
-        background: $primary;
-        color: $text;
-    }
-    
-    #btn-cancel-db {
-        column-span: 2;
-        width: 100%;
-        margin-top: 1;
-        background: $error; 
-        color: $text;
-    }
-    
     .sample-btn-container {
         align: right middle;
         height: auto;
@@ -285,11 +209,11 @@ CSS = """
         padding-top: 1;
     }
     
-#btn-refresh{
-    width: 100%;
-    background: $warning;
-    color: $text;
-}
+    #btn-refresh {
+        width: 100%;
+        background: $warning;
+        color: $text;
+    }
 
     #questions{
         overflow-y:auto;
