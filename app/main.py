@@ -2,7 +2,7 @@
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.widgets import Footer, ListView
+from textual.widgets import Footer
 from app.db import create_or_refresh_db
 from app.components import (
     Sidebar,
@@ -10,7 +10,6 @@ from app.components import (
     SqlEditorPanel,
     SchemasPanel,
     ConsolePanel,
-    Question,
 )
 from app.styles import CSS
 from typing import Any
@@ -37,14 +36,6 @@ class MainApp(App[Any]):
         yield SchemasPanel(id="schemas-area", classes="card")
         yield ConsolePanel(id="console-area", classes="card")
         yield Footer()
-
-    def on_list_view_selected(self, event: ListView.Selected) -> None:
-        """Handle list view selection events to update topic panel."""
-        question = event.item
-        if isinstance(question, Question):
-            self.query_one(
-                "#topic-area", TopicPanel
-            ).border_title = f"Topic: {question.title}"
 
 
 if __name__ == "__main__":

@@ -20,4 +20,6 @@ def ui_table_handler(
     table.clear(columns=True)
     table.add_columns(*headers)
     table.add_rows(rows)
+    table.cursor_type = "row"
+    table.display = True
     return table

@@ -38,7 +38,6 @@ class SqlEditorPanel(Container):
             rows = results.get("rows", [])
             descriptions = results.get("descriptions", [])
             error = results.get("error", "")
-            dt.cursor_type = "row"
             if error:
                 log.write(f"[red]Error executing SQL Query: {error}[/red]")
             elif rows:

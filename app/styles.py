@@ -190,11 +190,7 @@ CSS = """
         background: $surface-darken-1;
         border:none;
     }
-    #sample-table {
-        height: 1fr;
-        border: blank;
-        background: $surface-darken-1;
-    }
+
     
     .sample_btn {
         background: $primary;
