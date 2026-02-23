@@ -1,10 +1,11 @@
 """Database seeding functionality."""
 
 from pathlib import Path
+from typing import Optional
 from app.db.engin import db_session
 
 
-def seed_db(db_path: Path, seed_path: Path, schema_path: Path) -> None:
+def seed_db(db_path: Path, seed_path: Optional[Path], schema_path: Path) -> None:
     """Seed the database with schema and initial data.
 
     Args:

@@ -14,13 +14,12 @@ class TopicPanel(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the panel UI."""
-        yield Markdown(
-            """**Problem Description**
-                
-Write a query to select all users from the `users` table.
-
-Expected: `id`, `name`, `email`
-            """
-        )
+        yield Markdown(id="topic-description")
         with Collapsible(title="Show Hints", collapsed=True):
-            yield Label("Hint: Try using the SELECT statement.")
+            yield Label(id="topic-hints")
+
+    def load_question(self, title: str, description: str, hint: str) -> None:
+        """Update the panel with a new question."""
+        self.border_title = f"Topic: {title}"
+        self.query_one("#topic-description", Markdown).update(description)
+        self.query_one("#topic-hints", Label).update(hint)

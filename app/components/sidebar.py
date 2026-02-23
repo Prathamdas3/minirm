@@ -15,17 +15,7 @@ from typing import Any
 
 from app.components.topics import TopicPanel
 from app.db.utils import create_or_refresh_db
-
-QUESTIONS: dict[str, dict[str, Any]] = {
-    "Easy": {
-        "questions": ["Select All Users", "Find User by Id", "Count Users"],
-        "options": {"collapsed": False},
-    },
-    "Medium": {
-        "questions": ["Select All Users", "Find User by Id", "Count Users"],
-        "options": {"collapsed": True},
-    },
-}
+from app.questions.registry import get_by_difficulty
 
 
 class Sidebar(Container):
@@ -34,26 +24,34 @@ class Sidebar(Container):
     def on_mount(self) -> None:
         """Called when the panel is mounted."""
         self.border_title = "Welcome!!"
-        first_question = next(iter(QUESTIONS.values()))["questions"][0]
-        self.app.query_one(  # type: ignore
-            "#topic-area", TopicPanel
-        ).border_title = f"Topic: {first_question}"
+
+        by_difficulty = get_by_difficulty()
+        if by_difficulty:
+            first_question = next(iter(by_difficulty.values()))[0]
+            self.app.query_one(  # type: ignore
+                "#topic-area", TopicPanel
+            ).load_question(
+                title=first_question.title,
+                description=first_question.description,
+                hint=first_question.hint,
+            )
 
     def compose(self) -> ComposeResult:
         """Compose the sidebar UI."""
-        with VerticalScroll():
-            for key, data in QUESTIONS.items():
-                questions_list = data.get("questions", [])
-                collapsed = data.get("options", {}).get("collapsed", True)
+        with VerticalScroll(id="questions-scroll"):
+            questions = get_by_difficulty()
+            if len(questions) == 0:
+                yield Label("No questions available.")
+            for difficulty, qs in questions.items():
                 with Collapsible(
-                    title=str(key),
-                    collapsed=collapsed,
+                    title=str(difficulty),
+                    collapsed=difficulty != "Easy",
                     classes="collapsible",
-                    id=f"collapsible_{key.lower()}",
+                    id=f"collapsible_{difficulty.lower()}",
                 ):
                     with ListView():
-                        for q in questions_list:
-                            yield ListItem(Label(q))
+                        for q in qs:
+                            yield ListItem(Label(q.title))
 
     def _reset_console(self) -> None:
         """Clear all console widgets and reset to console tab."""
@@ -75,6 +73,6 @@ class Sidebar(Container):
         create_or_refresh_db()
         label = event.item.query_one(Label)
         self.app.query_one(  # type: ignore
-            "#topic-area", TopicPanel
-        ).border_title = f"Topic: {label.render()}"
+            "#topic-area", TopicPanel 
+        ).load_question(title=f"Topic: {label.render()}")
         self._reset_console()

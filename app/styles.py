@@ -83,15 +83,6 @@ CSS = """
         row-span: 1;
     }
 
-    .topic-header {
-        height: auto;
-        border: heavy $secondary;
-        padding: 1;
-        margin-bottom: 1;
-        text-align: center;
-        text-style: bold;
-    }
-
     .section-header {
         text-align: center;
         text-style: bold;
@@ -159,16 +150,6 @@ CSS = """
         row-span: 1;
         overflow-y: auto;
         scrollbar-visibility: hidden;
-    }
-
-    .schema-inner {
-        height: auto;
-        background: $surface-darken-1;
-    }
-
-    .schema-inner DataTable {
-        height: auto;
-        background: $surface-darken-1;
     }
 
     /* 

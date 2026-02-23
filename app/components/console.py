@@ -1,9 +1,8 @@
 """Console panel for displaying query results."""
 
 from textual.app import ComposeResult
-from textual.containers import Container
 from textual.widgets import DataTable, TabbedContent, TabPane, RichLog
-from textual.containers import VerticalScroll
+from textual.containers import VerticalScroll,Container
 
 
 class ConsolePanel(Container):

@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Dict, List
 
 HOME_DIR = str(Path.home())
-APP_NAME = "minirm"
-CONFIG_DIR = Path.home() / ".minirm"
+APP_NAME = "squilio"
+CONFIG_DIR = Path.home() / f".{APP_NAME}"
 
 SCHEMAS: Dict[str, List[Dict[str, str]]] = {
     "users": [

@@ -15,6 +15,7 @@ from app.styles import CSS
 from typing import Any
 
 
+
 class MainApp(App[Any]):
     """Main application class for the minirm SQL practice TUI."""
 
