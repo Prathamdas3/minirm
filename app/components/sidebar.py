@@ -37,14 +37,19 @@ class Sidebar(Container):
             )
 
     def compose(self) -> ComposeResult:
-        """Compose the sidebar UI."""
+        DIFFICULTY_ORDER = ["Easy", "Medium", "Hard"]
         with VerticalScroll(id="questions-scroll"):
             questions = get_by_difficulty()
-            if len(questions) == 0:
+            if not questions:
                 yield Label("No questions available.")
-            for difficulty, qs in questions.items():
+                return
+
+            for difficulty in DIFFICULTY_ORDER:
+                qs = questions.get(difficulty, [])
+                if not qs:
+                    continue
                 with Collapsible(
-                    title=str(difficulty),
+                    title=difficulty,
                     collapsed=difficulty != "Easy",
                     classes="collapsible",
                     id=f"collapsible_{difficulty.lower()}",
@@ -73,6 +78,6 @@ class Sidebar(Container):
         create_or_refresh_db()
         label = event.item.query_one(Label)
         self.app.query_one(  # type: ignore
-            "#topic-area", TopicPanel 
+            "#topic-area", TopicPanel
         ).load_question(title=f"Topic: {label.render()}")
         self._reset_console()
