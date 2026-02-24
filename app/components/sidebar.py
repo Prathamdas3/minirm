@@ -13,6 +13,7 @@ from textual.widgets import (
 )
 from typing import Any
 
+from app.components.sql import SqlEditorPanel
 from app.components.topics import TopicPanel
 from app.db.utils import create_or_refresh_db
 from app.questions.registry import get_all, get_by_difficulty
@@ -28,6 +29,7 @@ class Sidebar(Container):
         by_difficulty = get_by_difficulty()
         if by_difficulty:
             first_question = next(iter(by_difficulty.values()))[0]
+            self.app.query_one("#sql-area", SqlEditorPanel).question = first_question.id # type: ignore
             self.app.query_one(  # type: ignore
                 "#topic-area", TopicPanel
             ).load_question(
@@ -93,4 +95,5 @@ class Sidebar(Container):
             description=question.description,
             hint=question.hint,
         )
+        self.app.query_one("#sql-area", SqlEditorPanel).question = question.id # type: ignore
         self._reset_console()
