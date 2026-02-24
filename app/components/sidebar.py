@@ -15,7 +15,7 @@ from typing import Any
 
 from app.components.topics import TopicPanel
 from app.db.utils import create_or_refresh_db
-from app.questions.registry import get_by_difficulty
+from app.questions.registry import get_all, get_by_difficulty
 
 
 class Sidebar(Container):
@@ -77,7 +77,20 @@ class Sidebar(Container):
         """Handle question selection to update topic and reset console."""
         create_or_refresh_db()
         label = event.item.query_one(Label)
+        title = label.render()
+        question = next(
+            (q for q in get_all().values() if q.title == title),
+            None,
+        )
+
+        if question is None:
+            self.notify(f"Question '{title}' not found.", severity="error")
+            return
         self.app.query_one(  # type: ignore
             "#topic-area", TopicPanel
-        ).load_question(title=f"Topic: {label.render()}")
+        ).load_question(
+            title=question.title,
+            description=question.description,
+            hint=question.hint,
+        )
         self._reset_console()

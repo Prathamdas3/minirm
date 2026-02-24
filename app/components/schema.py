@@ -1,12 +1,62 @@
 """Schema panel for displaying database schemas."""
 
+from pathlib import Path
+
 from textual.app import ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Button, Collapsible, DataTable, Label, TabbedContent
 from app.db import excute_db_query
+from app.db.engin import db_session
 from app.utils import ui_table_handler
 from typing import Any
-from app.constant import CONFIG_DIR, SCHEMAS, RELATIONSHIPS
+from app.constant import CONFIG_DIR
+
+
+def get_db_schema(db_path: Path) -> tuple[dict[str, list[dict[str, str]]], list[str]]:
+    """Get database schema dynamically from SQLite.
+
+    Args:
+        db_path: Path to the SQLite database file.
+
+    Returns:
+        A tuple of (schemas dict, relationships list).
+    """
+    schemas: dict[str, list[dict[str, str]]] = {}
+    relationships: list[str] = []
+
+    with db_session(path=db_path) as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
+        )
+        tables = [row[0] for row in cursor.fetchall()]
+
+        for table in tables:
+            cursor.execute(f"PRAGMA table_info({table})")
+            columns: list[dict[str, Any]] = []
+            for col in cursor.fetchall():
+                col_name = col[1]
+                col_type = col[2] or "TEXT"
+                col_pk = "PRIMARY KEY" if col[5] else ""
+                col_notnull = "NOT NULL" if col[3] else ""
+                constraints = (
+                    " ".join(filter(None, [col_pk, col_notnull])).strip() or "NULL"
+                )
+                columns.append(
+                    {"column": col_name, "type": col_type, "constraints": constraints}
+                )
+            schemas[table] = columns
+
+            cursor.execute(f"PRAGMA foreign_key_list({table})")
+            fks = cursor.fetchall()
+            for fk in fks:
+                from_col = fk[3]
+                to_table = fk[2]
+                to_col = fk[4]
+                relationships.append(f"{table}.{from_col} -> {to_table}.{to_col}")
+
+    return schemas, relationships
 
 
 class SchemasPanel(Container):
@@ -18,10 +68,14 @@ class SchemasPanel(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the panel UI."""
+        db_path = CONFIG_DIR / "db.sqlite3"
+        schemas, relationships = get_db_schema(db_path)
+
+        
         with VerticalScroll(id="schemas-scroll"):
-            for table_name in SCHEMAS.keys():
+            for table_name in schemas.keys():
                 with Collapsible(
-                    title=f"{table_name} ({len(SCHEMAS.get(table_name, []))} rows)",
+                    title=f"{table_name} ({len(schemas.get(table_name, []))} columns)",
                     classes="collapsible",
                     collapsed=True,
                     id=f"collapsible_{table_name.lower()}",
@@ -30,7 +84,7 @@ class SchemasPanel(Container):
                     columns = ["Column", "Type", "Constraints"]
                     rows = [
                         [col["column"], col["type"], col["constraints"]]
-                        for col in SCHEMAS.get(table_name, [])
+                        for col in schemas.get(table_name, [])
                     ]
                     ui_table_handler(dt, columns, rows)
                     yield dt
@@ -43,7 +97,7 @@ class SchemasPanel(Container):
 
             yield Label("Relationships", classes="section-header")
             with Container(classes="relationships-container"):
-                for rel in RELATIONSHIPS:
+                for rel in relationships:
                     yield Label(f"• {rel}", classes="relationship-item")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
