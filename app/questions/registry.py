@@ -1,3 +1,5 @@
+"""Question registry for managing SQL practice questions."""
+
 from app.questions.schema import Question
 
 _questions: dict[str, Question] = {}

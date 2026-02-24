@@ -6,7 +6,6 @@ from app.questions.schema import Question, TestCase
 from app.questions.registry import register, get_all, get_by_difficulty, clear_registry
 from app.questions.runner import run_question
 from app.db.utils import db_init, excute_db_query
-from app.constant import SCHEMAS
 
 
 @pytest.fixture(autouse=True)

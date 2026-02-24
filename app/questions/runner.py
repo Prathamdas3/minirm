@@ -1,3 +1,5 @@
+"""Question runner for executing and validating SQL queries."""
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -27,7 +29,9 @@ class RunResult:
 def run_question(db_path: Path, question_id: str, user_query: str) -> RunResult:
     question = get_all().get(question_id)
     if not question:
-        return RunResult(rows=[], descriptions=[], error=f"Question '{question_id}' not found")
+        return RunResult(
+            rows=[], descriptions=[], error=f"Question '{question_id}' not found"
+        )
 
     result = excute_db_query(db_path, user_query)
     error = result.get("error", "")
@@ -43,6 +47,8 @@ def run_question(db_path: Path, question_id: str, user_query: str) -> RunResult:
             passed = tc.validator(rows)
             test_results.append(TestResult(description=tc.description, passed=passed))
         except Exception as e:
-            test_results.append(TestResult(description=tc.description, passed=False, error=str(e)))
+            test_results.append(
+                TestResult(description=tc.description, passed=False, error=str(e))
+            )
 
     return RunResult(rows=rows, descriptions=descriptions, test_results=test_results)

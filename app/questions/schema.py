@@ -1,3 +1,5 @@
+"""Question data models for the minirm application."""
+
 from typing import Any, Callable
 from dataclasses import dataclass, field
 
