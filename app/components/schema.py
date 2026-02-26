@@ -7,6 +7,7 @@ from textual.containers import Container, VerticalScroll
 from textual.widgets import Button, Collapsible, DataTable, Label, TabbedContent
 from app.db import excute_db_query
 from app.db.engin import db_session
+from app.db.utils import create_or_refresh_db
 from app.utils import ui_table_handler
 from typing import Any
 from app.constant import CONFIG_DIR
@@ -68,9 +69,9 @@ class SchemasPanel(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the panel UI."""
+        create_or_refresh_db()
         db_path = CONFIG_DIR / "db.sqlite3"
         schemas, relationships = get_db_schema(db_path)
-
         
         with VerticalScroll(id="schemas-scroll"):
             for table_name in schemas.keys():
