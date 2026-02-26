@@ -39,6 +39,10 @@ class MainApp(App[Any]):
         yield Footer()
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point for the application."""
     app = MainApp()
     app.run()
+
+if __name__ == "__main__":
+    main()
